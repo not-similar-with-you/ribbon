@@ -41,7 +41,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * meet the desired criteria.
  * 
  * @author stonse
- * 
+ *
+ * http://blog.didispace.com/springcloud-sourcecode-ribbon/
+ * 运行期的动态更新:需要ribbon具备访问eureka来获取服务实例的能力
+ * 服务实例清单的过滤 通过过滤器来选择获取服务实例清单
  */
 public class DynamicServerListLoadBalancer<T extends Server> extends BaseLoadBalancer {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamicServerListLoadBalancer.class);
@@ -59,6 +62,7 @@ public class DynamicServerListLoadBalancer<T extends Server> extends BaseLoadBal
     protected final ServerListUpdater.UpdateAction updateAction = new ServerListUpdater.UpdateAction() {
         @Override
         public void doUpdate() {
+            // 更新服务
             updateListOfServers();
         }
     };
@@ -237,10 +241,11 @@ public class DynamicServerListLoadBalancer<T extends Server> extends BaseLoadBal
     public void updateListOfServers() {
         List<T> servers = new ArrayList<T>();
         if (serverListImpl != null) {
+            //Eureka Server中获取服务可用实例的列表
             servers = serverListImpl.getUpdatedListOfServers();
             LOGGER.debug("List of Servers for {} obtained from Discovery client: {}",
                     getIdentifier(), servers);
-
+            // 过滤器是否为 null
             if (filter != null) {
                 servers = filter.getFilteredListOfServers(servers);
                 LOGGER.debug("Filtered List of Servers for {} obtained from Discovery client: {}",

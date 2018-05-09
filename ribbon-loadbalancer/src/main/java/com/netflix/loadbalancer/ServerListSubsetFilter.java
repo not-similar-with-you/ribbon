@@ -38,6 +38,7 @@ import com.netflix.config.DynamicIntProperty;
  * @author awang
  *
  * @param <T>
+ *     适用于拥有大规模服务器集群(上百或更多)的系统
  */
 public class ServerListSubsetFilter<T extends Server> extends ZoneAffinityServerListFilter<T> implements IClientConfigAware, Comparator<T>{
 

@@ -34,14 +34,18 @@ import java.util.List;
  * 
  */
 public abstract class AbstractLoadBalancer implements ILoadBalancer {
-    
+    /**
+     * 所有服务实例
+     * 正常服务的实例
+     * 停止服务的实例
+     */
     public enum ServerGroup{
         ALL,
         STATUS_UP,
         STATUS_NOT_UP        
     }
         
-    /**
+    /**选择具体服务实例时忽略key的条件判断
      * delegate to {@link #chooseServer(Object)} with parameter null.
      */
     public Server chooseServer() {
@@ -49,7 +53,7 @@ public abstract class AbstractLoadBalancer implements ILoadBalancer {
     }
 
     
-    /**
+    /**根据分组类型来获取不同的服务实例列表
      * List of servers that this Loadbalancer knows about
      * 
      * @param serverGroup Servers grouped by status, e.g., {@link ServerGroup#STATUS_UP}

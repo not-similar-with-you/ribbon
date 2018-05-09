@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * (refactored and moved here from {@link com.netflix.loadbalancer.DynamicServerListLoadBalancer})
  *
  * @author David Liu
+ * DynamicServerListLoadBalancer负载均衡器中的默认实现
  */
 public class PollingServerListUpdater implements ServerListUpdater {
 
@@ -82,7 +83,13 @@ public class PollingServerListUpdater implements ServerListUpdater {
 
     private final AtomicBoolean isActive = new AtomicBoolean(false);
     private volatile long lastUpdated = System.currentTimeMillis();
+    /**
+     * 1000
+     */
     private final long initialDelayMs;
+    /**
+     * 30*1000
+     */
     private final long refreshIntervalMs;
 
     private volatile ScheduledFuture<?> scheduledFuture;
@@ -100,6 +107,10 @@ public class PollingServerListUpdater implements ServerListUpdater {
         this.refreshIntervalMs = refreshIntervalMs;
     }
 
+    /**
+     * 以定时任务的方式进行服务列表的更新
+     * @param updateAction
+     */
     @Override
     public synchronized void start(final UpdateAction updateAction) {
         if (isActive.compareAndSet(false, true)) {
@@ -113,6 +124,7 @@ public class PollingServerListUpdater implements ServerListUpdater {
                         return;
                     }
                     try {
+                        //DynamicServerListLoadBalancer  updateListOfServers
                         updateAction.doUpdate();
                         lastUpdated = System.currentTimeMillis();
                     } catch (Exception e) {

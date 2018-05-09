@@ -26,10 +26,13 @@ import java.util.List;
  * @param <T>
  */
 public interface ServerList<T extends Server> {
-
+    /**
+     * 获取初始化的服务实例清单
+     * @return
+     */
     public List<T> getInitialListOfServers();
     
-    /**
+    /**获取更新的服务实例清单
      * Return updated list of servers. This is called say every 30 secs
      * (configurable) by the Loadbalancer's Ping cycle
      * 

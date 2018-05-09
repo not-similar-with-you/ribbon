@@ -51,16 +51,27 @@ import com.netflix.servo.monitor.Monitors;
  * determines the loadbalacing strategy
  * 
  * @author stonse
+ * 存储负载均衡器中各个服务实例当前的属性和统计信息
  * 
  */
 public class LoadBalancerStats implements IClientConfigAware {
     
     private static final String PREFIX = "LBStats_";
-    
+    /**
+     * 调用的服务 user 或者 其他
+     */
     String name;
     
     // Map<Server,ServerStats> serverStatsMap = new ConcurrentHashMap<Server,ServerStats>();
+    /**
+     * key ： zone 名称 例如： defaultZone
+     * value: zoneStats 信息
+     */
     volatile Map<String, ZoneStats> zoneStatsMap = new ConcurrentHashMap<String, ZoneStats>();
+    /**
+     * 可用的服务 的实例 key ： zone 名称 例如： defaultZone
+     * value ：list 服务部署的实例list
+     */
     volatile Map<String, List<? extends Server>> upServerListZoneMap = new ConcurrentHashMap<String, List<? extends Server>>();
     
     private volatile CachedDynamicIntProperty connectionFailureThreshold;
@@ -71,7 +82,10 @@ public class LoadBalancerStats implements IClientConfigAware {
 
     private static final DynamicIntProperty SERVERSTATS_EXPIRE_MINUTES = 
         DynamicPropertyFactory.getInstance().getIntProperty("niws.loadbalancer.serverStats.expire.minutes", 30);
-    
+
+    /**
+     * 服务实例的 本地缓存信息
+     */
     private final LoadingCache<Server, ServerStats> serverStatsCache = 
         CacheBuilder.newBuilder()
             .expireAfterAccess(SERVERSTATS_EXPIRE_MINUTES.get(), TimeUnit.MINUTES)

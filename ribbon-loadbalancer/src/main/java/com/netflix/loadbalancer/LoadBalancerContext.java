@@ -569,16 +569,26 @@ public class LoadBalancerContext implements IClientConfigAware {
         return new Server(host, port);
     }
 
+    /**
+     *
+     * @param server
+     * @param original 类似: http://service-user/user/ec
+     * @return
+     */
     public URI reconstructURIWithServer(Server server, URI original) {
+        // 服务的主机 一般为：H1RDIJH2SVJSE3X
         String host = server.getHost();
+        // 端口
         int port = server.getPort();
+        // 协议
         String scheme = server.getScheme();
-        
+        // 主机 端口 协议相同
         if (host.equals(original.getHost()) 
                 && port == original.getPort()
                 && scheme == original.getScheme()) {
             return original;
         }
+        // 协议为null
         if (scheme == null) {
             scheme = original.getScheme();
         }
@@ -588,14 +598,17 @@ public class LoadBalancerContext implements IClientConfigAware {
 
         try {
             StringBuilder sb = new StringBuilder();
+            // http://
             sb.append(scheme).append("://");
             if (!Strings.isNullOrEmpty(original.getRawUserInfo())) {
                 sb.append(original.getRawUserInfo()).append("@");
             }
+            // 拼接主机  端口
             sb.append(host);
             if (port >= 0) {
                 sb.append(":").append(port);
             }
+            // 路径 与 条件
             sb.append(original.getRawPath());
             if (!Strings.isNullOrEmpty(original.getRawQuery())) {
                 sb.append("?").append(original.getRawQuery());

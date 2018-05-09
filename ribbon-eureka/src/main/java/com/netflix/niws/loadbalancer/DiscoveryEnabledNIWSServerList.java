@@ -48,6 +48,9 @@ public class DiscoveryEnabledNIWSServerList extends AbstractServerList<Discovery
     private static final Logger logger = LoggerFactory.getLogger(DiscoveryEnabledNIWSServerList.class);
 
     String clientName;
+    /**
+     * USER-SERVICE
+     */
     String vipAddresses;
     boolean isSecure = false;
 
@@ -165,7 +168,9 @@ public class DiscoveryEnabledNIWSServerList extends AbstractServerList<Discovery
             for (String vipAddress : vipAddresses.split(",")) {
                 // if targetRegion is null, it will be interpreted as the same region of client
                 List<InstanceInfo> listOfInstanceInfo = eurekaClient.getInstancesByVipAddress(vipAddress, isSecure, targetRegion);
+                //服务实例进行遍历
                 for (InstanceInfo ii : listOfInstanceInfo) {
+                    // 是否可用
                     if (ii.getStatus().equals(InstanceStatus.UP)) {
 
                         if(shouldUseOverridePort){
@@ -184,7 +189,7 @@ public class DiscoveryEnabledNIWSServerList extends AbstractServerList<Discovery
                                 ii = new InstanceInfo.Builder(copy).setPort(overridePort).build();
                             }
                         }
-
+                        //转换成DiscoveryEnabledServer
                         DiscoveryEnabledServer des = createServer(ii, isSecure, shouldUseIpAddr);
                         serverList.add(des);
                     }

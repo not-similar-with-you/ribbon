@@ -31,6 +31,8 @@ import java.util.List;
  * 
  * @author awang
  *
+ * 选取最少并发量请求的服务器
+ *
  */
 public class BestAvailableRule extends ClientConfigEnabledRoundRobinRule {
 
@@ -41,20 +43,27 @@ public class BestAvailableRule extends ClientConfigEnabledRoundRobinRule {
         if (loadBalancerStats == null) {
             return super.choose(key);
         }
+        // 获取所有的服务器列表
         List<Server> serverList = getLoadBalancer().getAllServers();
         int minimalConcurrentConnections = Integer.MAX_VALUE;
+        // 当前 毫秒
         long currentTime = System.currentTimeMillis();
         Server chosen = null;
         for (Server server: serverList) {
+            // 获取各个服务器的状态
             ServerStats serverStats = loadBalancerStats.getSingleServerStat(server);
+            // 没有触发断路器的话继续执行
             if (!serverStats.isCircuitBreakerTripped(currentTime)) {
+                // 获取当前服务器的请求个数
                 int concurrentConnections = serverStats.getActiveRequestsCount(currentTime);
+                // 比较各个服务器之间的请求数，然后选取请求数最少的服务器并放到chosen变量中
                 if (concurrentConnections < minimalConcurrentConnections) {
                     minimalConcurrentConnections = concurrentConnections;
                     chosen = server;
                 }
             }
         }
+        // 如果没有选上，调用父类ClientConfigEnabledRoundRobinRule的choose方法，也就是使用RoundRobinRule轮询的方式进行负载均衡
         if (chosen == null) {
             return super.choose(key);
         } else {

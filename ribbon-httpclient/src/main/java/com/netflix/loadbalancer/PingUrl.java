@@ -47,10 +47,17 @@ import java.io.IOException;
  */
 public class PingUrl implements IPing {
     private static final Logger LOGGER = LoggerFactory.getLogger(PingUrl.class);
-
-		String pingAppendString = "";
-		boolean isSecure = false;
-		
+	/**
+	 * 拼接地址
+	 */
+	String pingAppendString = "";
+	/**
+	 * 是否https
+	 */
+	boolean isSecure = false;
+		/**
+		 * 服务响应 返回对比
+		 */
 		String expectedContent = null;
 
 		/*
@@ -123,14 +130,19 @@ public class PingUrl implements IPing {
 				HttpUriRequest getRequest = new HttpGet(urlStr);
 				String content=null;
 				try {
+					// 执行请求
 					HttpResponse response = httpClient.execute(getRequest);
+					// 获取响应内容
 					content = EntityUtils.toString(response.getEntity());
+					//http 响应码
 					isAlive = (response.getStatusLine().getStatusCode() == 200);
+					//设置期望内容是否为null
 					if (getExpectedContent()!=null){
 						LOGGER.debug("content:" + content);
 						if (content == null){
 							isAlive = false;
 						}else{
+							// 服务返回与 期望相同
 							if (content.equals(getExpectedContent())){
 								isAlive = true;
 							}else{

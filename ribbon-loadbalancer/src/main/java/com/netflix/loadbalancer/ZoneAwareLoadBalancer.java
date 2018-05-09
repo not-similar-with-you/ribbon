@@ -90,24 +90,37 @@ public class ZoneAwareLoadBalancer<T extends Server> extends DynamicServerListLo
     protected void setServerListForZones(Map<String, List<Server>> zoneServersMap) {
         super.setServerListForZones(zoneServersMap);
         if (balancers == null) {
+            //存储每个Zone区域对应的负载均衡器
             balancers = new ConcurrentHashMap<String, BaseLoadBalancer>();
         }
         for (Map.Entry<String, List<Server>> entry: zoneServersMap.entrySet()) {
         	String zone = entry.getKey().toLowerCase();
+            //创建负载均衡器 设置对应Zone区域的实例清单
             getLoadBalancer(zone).setServersList(entry.getValue());
         }
         // check if there is any zone that no longer has a server
         // and set the list to empty so that the zone related metrics does not
         // contain stale data
+        //对Zone区域中实例清单的检查，看看是否有Zone区域下已经没有实例了
+        //为了后续选择节点时，防止过时的Zone区域统计信息干扰具体实例的选择算法
         for (Map.Entry<String, BaseLoadBalancer> existingLBEntry: balancers.entrySet()) {
             if (!zoneServersMap.keySet().contains(existingLBEntry.getKey())) {
                 existingLBEntry.getValue().setServersList(Collections.emptyList());
             }
         }
-    }    
-        
+    }
+
+    /**
+     * 周期性的产生跨区域（Zone）访问的情况，由于跨区域会产生更高的延迟，
+     * 这些实例主要以防止区域性故障实现高可用为目的而不能作为常规访问的实例，
+     * 所以在多区域部署的情况下会有一定的性能问题，而该负载均衡器则可以避免这样的问题
+     *  根据key 获取 可用的 服务
+      * @param key
+     * @return
+     */
     @Override
     public Server chooseServer(Object key) {
+        //只有当负载均衡器中维护的实例所属Zone区域个数大于1的时候才会执行这里的选择策略，否则还是将使用父类的实现
         if (!ENABLED.get() || getLoadBalancerStats().getAvailableZones().size() <= 1) {
             logger.debug("Zone aware logic disabled or there is only one zone");
             return super.chooseServer(key);
@@ -115,6 +128,7 @@ public class ZoneAwareLoadBalancer<T extends Server> extends DynamicServerListLo
         Server server = null;
         try {
             LoadBalancerStats lbStats = getLoadBalancerStats();
+            //当前负载均衡器中所有的Zone区域分别创建快照，保存在Map zoneSnapshot中
             Map<String, ZoneSnapshot> zoneSnapshot = ZoneAvoidanceRule.createSnapshot(lbStats);
             logger.debug("Zone snapshots: {}", zoneSnapshot);
             if (triggeringLoad == null) {
@@ -126,13 +140,18 @@ public class ZoneAwareLoadBalancer<T extends Server> extends DynamicServerListLo
                 triggeringBlackoutPercentage = DynamicPropertyFactory.getInstance().getDoubleProperty(
                         "ZoneAwareNIWSDiscoveryLoadBalancer." + this.getName() + ".avoidZoneWithBlackoutPercetage", 0.99999d);
             }
+            //获取可用的Zone区域集合
             Set<String> availableZones = ZoneAvoidanceRule.getAvailableZones(zoneSnapshot, triggeringLoad.get(), triggeringBlackoutPercentage.get());
             logger.debug("Available zones: {}", availableZones);
+            //当获得的可用Zone区域集合不为空，并且个数小于Zone区域总数
             if (availableZones != null &&  availableZones.size() < zoneSnapshot.keySet().size()) {
+                //随机的选择一个Zone区域
                 String zone = ZoneAvoidanceRule.randomChooseZone(zoneSnapshot, availableZones);
                 logger.debug("Zone chosen: {}", zone);
                 if (zone != null) {
+                    //获取对应Zone区域的服务均衡器
                     BaseLoadBalancer zoneLoadBalancer = getLoadBalancer(zone);
+                    //调用chooseServer来选择具体的服务实例
                     server = zoneLoadBalancer.chooseServer(key);
                 }
             }
@@ -146,7 +165,12 @@ public class ZoneAwareLoadBalancer<T extends Server> extends DynamicServerListLo
             return super.chooseServer(key);
         }
     }
-     
+
+    /**
+     * 创建具体的 负载均衡器
+     * @param zone
+     * @return
+     */
     @VisibleForTesting
     BaseLoadBalancer getLoadBalancer(String zone) {
         zone = zone.toLowerCase();

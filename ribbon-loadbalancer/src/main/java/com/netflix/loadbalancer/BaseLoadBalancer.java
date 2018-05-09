@@ -66,16 +66,27 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
     private final static SerialPingStrategy DEFAULT_PING_STRATEGY = new SerialPingStrategy();
     private static final String DEFAULT_NAME = "default";
     private static final String PREFIX = "LoadBalancer_";
-
+    /**
+     * 负载均衡的处理规则
+     */
     protected IRule rule = DEFAULT_RULE;
-
+    /**
+     * 检查服务实例操作的执行策略 SerialPingStrategy
+     */
     protected IPingStrategy pingStrategy = DEFAULT_PING_STRATEGY;
-
+    /**
+     * 检查服务实例是否正常服务 需要在构造时注入它的具体实现
+     */
     protected IPing ping = null;
-
+    /**
+     * 存储所有服务实例的清单
+     */
     @Monitor(name = PREFIX + "AllServerList", type = DataSourceType.INFORMATIONAL)
     protected volatile List<Server> allServerList = Collections
             .synchronizedList(new ArrayList<Server>());
+    /**
+     * 存储正常服务的实例清单
+     */
     @Monitor(name = PREFIX + "UpServerList", type = DataSourceType.INFORMATIONAL)
     protected volatile List<Server> upServerList = Collections
             .synchronizedList(new ArrayList<Server>());
@@ -91,7 +102,9 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
     protected Comparator<Server> serverComparator = new ServerComparator();
 
     protected AtomicBoolean pingInProgress = new AtomicBoolean(false);
-
+    /**
+     * 存储负载均衡器各服务实例属性和统计信息
+     */
     protected LoadBalancerStats lbStats;
 
     private volatile Counter counter = Monitors.newCounter("LoadBalancer_ChooseServer");
@@ -434,7 +447,7 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
         }
     }
 
-    /**
+    /**负载均衡器中增加新的服务实例列表
      * Add a list of servers to the 'allServer' list; does not verify
      * uniqueness, so you could give a server a greater share by adding it more
      * than once
@@ -482,7 +495,7 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
         }
     }
 
-    /**
+    /**对应Zone区域的实例清单
      * Set the list of servers used as the server pool. This overrides existing
      * server list.
      */
@@ -775,6 +788,10 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
         }
     }
 
+    /**
+     * 标记某个服务实例暂停服务
+     * @param server Server to mark as down
+     */
     public void markServerDown(Server server) {
         if (server == null || !server.isAlive()) {
             return;
@@ -888,7 +905,7 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
         Monitors.unregisterObject("Rule_" + name, this.getRule());
     }
 
-    /**
+    /**采用线性遍历ping服务实例的方式实现检查 IPing速度不理想，或是Server列表过大时，可能变的不是很为理想
      * Default implementation for <c>IPingStrategy</c>, performs ping
      * serially, which may not be desirable, if your <c>IPing</c>
      * implementation is slow, or you have large number of servers.

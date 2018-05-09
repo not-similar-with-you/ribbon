@@ -51,15 +51,25 @@ import com.netflix.servo.monitor.Monitors;
  * and exclusivity are turned off and nothing is filtered out.
  * 
  * @author stonse
- *
+ * 区域感知（Zone Affinity）”的方式实现服务实例的过滤
+ * 根据提供服务的实例所处区域（Zone）与消费者自身的所处区域（Zone）进行比较，过滤掉那些不是同处一个区域的实例
  */
 public class ZoneAffinityServerListFilter<T extends Server> extends
         AbstractServerListFilter<T> implements IClientConfigAware {
 
     private volatile boolean zoneAffinity = DefaultClientConfigImpl.DEFAULT_ENABLE_ZONE_AFFINITY;
     private volatile boolean zoneExclusive = DefaultClientConfigImpl.DEFAULT_ENABLE_ZONE_EXCLUSIVITY;
+    /**
+     * 实例平均负载 >= 0.6
+     */
     private DynamicDoubleProperty activeReqeustsPerServerThreshold;
+    /**
+     * 故障实例百分比（断路器断开数 / 实例数量） >= 0.8
+     */
     private DynamicDoubleProperty blackOutServerPercentageThreshold;
+    /**
+     * 可用实例数（实例数量 - 断路器断开数） < 2
+     */
     private DynamicIntProperty availableServersThreshold;
     private Counter overrideCounter;
     private ZoneAffinityPredicate zoneAffinityPredicate = new ZoneAffinityPredicate();
@@ -107,6 +117,7 @@ public class ZoneAffinityServerListFilter<T extends Server> extends
         if (zoneExclusive) {
             return true;
         }
+        //获取这些过滤后的同区域实例的基础指标 AbstractServerListFilter -> getLoadBalancerStats
         LoadBalancerStats stats = getLoadBalancerStats();
         if (stats == null) {
             return zoneAffinity;
@@ -134,6 +145,7 @@ public class ZoneAffinityServerListFilter<T extends Server> extends
         if (zone != null && (zoneAffinity || zoneExclusive) && servers !=null && servers.size() > 0){
             List<T> filteredServers = Lists.newArrayList(Iterables.filter(
                     servers, this.zoneAffinityPredicate.getServerOnlyPredicate()));
+            //判断是否要启用“区域感知”的功能
             if (shouldEnableZoneAffinity(filteredServers)) {
                 return filteredServers;
             } else if (zoneAffinity) {
