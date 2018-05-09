@@ -47,8 +47,9 @@ public class RandomRule extends AbstractLoadBalancerRule {
             }
             List<Server> upList = lb.getReachableServers();
             List<Server> allList = lb.getAllServers();
-
+            // 获取总的服务的数量
             int serverCount = allList.size();
+            // 没有服务
             if (serverCount == 0) {
                 /*
                  * No servers. End regardless of pass, because subsequent passes
@@ -58,18 +59,20 @@ public class RandomRule extends AbstractLoadBalancerRule {
             }
 
             int index = chooseRandomInt(serverCount);
+            // 可用的 服务list 中根据随机数索引获取
             server = upList.get(index);
-
+            // 没有服务
             if (server == null) {
                 /*
                  * The only time this should happen is if the server list were
                  * somehow trimmed. This is a transient condition. Retry after
                  * yielding.
                  */
+                // 重新循环
                 Thread.yield();
                 continue;
             }
-
+            // 服务存活
             if (server.isAlive()) {
                 return (server);
             }
@@ -83,6 +86,11 @@ public class RandomRule extends AbstractLoadBalancerRule {
 
     }
 
+    /**
+     * ThreadLocalRandom 生成随机数
+     * @param serverCount
+     * @return
+     */
     protected int chooseRandomInt(int serverCount) {
         return ThreadLocalRandom.current().nextInt(serverCount);
     }

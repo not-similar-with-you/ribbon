@@ -56,6 +56,7 @@ public class RoundRobinRule extends AbstractLoadBalancerRule {
 
         Server server = null;
         int count = 0;
+        // 只进行10 次获取
         while (server == null && count++ < 10) {
             List<Server> reachableServers = lb.getReachableServers();
             List<Server> allServers = lb.getAllServers();
@@ -66,8 +67,9 @@ public class RoundRobinRule extends AbstractLoadBalancerRule {
                 log.warn("No up servers available from load balancer: " + lb);
                 return null;
             }
-
+            // incrementAndGetModulo方法内部使用nextServerCyclicCounter这个AtomicInteger属性原子递增对serverCount取模得到索引值
             int nextServerIndex = incrementAndGetModulo(serverCount);
+            // 得到服务器实例 ==》 RandomRule
             server = allServers.get(nextServerIndex);
 
             if (server == null) {
@@ -99,8 +101,11 @@ public class RoundRobinRule extends AbstractLoadBalancerRule {
      */
     private int incrementAndGetModulo(int modulo) {
         for (;;) {
+            // 获取当前的计数值
             int current = nextServerCyclicCounter.get();
+            // + 1 取模 获取下一个 server 的 索引
             int next = (current + 1) % modulo;
+            // cas 更新成功
             if (nextServerCyclicCounter.compareAndSet(current, next))
                 return next;
         }
