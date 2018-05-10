@@ -23,7 +23,7 @@ import java.util.List;
  * Interface that defines the methods sed to obtain the List of Servers
  * @author stonse
  *
- * @param <T>
+ * @param <T> 定义获取所有的server的注册列表信息
  */
 public interface ServerList<T extends Server> {
     /**

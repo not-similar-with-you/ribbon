@@ -179,7 +179,14 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
     void initWithConfig(IClientConfig clientConfig, IRule rule, IPing ping) {
         initWithConfig(clientConfig, rule, ping, createLoadBalancerStatsFromConfig(config));
     }
-    
+
+    /**
+     * PingInterval MaxTotalPingTime
+     * @param clientConfig
+     * @param rule
+     * @param ping
+     * @param stats
+     */
     void initWithConfig(IClientConfig clientConfig, IRule rule, IPing ping, LoadBalancerStats stats) {
         this.config = clientConfig;
         String clientName = clientConfig.getClientName();
@@ -220,9 +227,14 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
         init();
 
     }
-    
+
+    /**
+     * 用戶配置的 Rule  Ping
+     * @param clientConfig
+     */
     @Override
     public void initWithNiwsConfig(IClientConfig clientConfig) {
+        // 獲取用戶 配置的 負載 規則 ping 類 字符串
         String ruleClassName = (String) clientConfig
                 .getProperty(CommonClientConfigKey.NFLoadBalancerRuleClassName);
         String pingClassName = (String) clientConfig
@@ -231,6 +243,7 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
         IPing ping;
         LoadBalancerStats stats;
         try {
+            // 獲取 配置的 類
             rule = (IRule) ClientFactory.instantiateInstanceWithClientConfig(
                     ruleClassName, clientConfig);
             ping = (IPing) ClientFactory.instantiateInstanceWithClientConfig(
@@ -274,8 +287,13 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
     public IClientConfig getClientConfig() {
     	return config;
     }
-    
+
+    /**
+     * 是否忽略ping
+     * @return
+     */
     private boolean canSkipPing() {
+        // ping 对象为null  或者 ping 类为 DummyPing 则跳过ping
         if (ping == null
                 || ping.getClass().getName().equals(DummyPing.class.getName())) {
             // default ping, no need to set up timer
@@ -286,6 +304,7 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
     }
 
     void setupPingTask() {
+        // 是否 忽略 ping
         if (canSkipPing()) {
             return;
         }
@@ -341,6 +360,10 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
         return aproposLock;
     }
 
+    /**
+     * 設置 pingIntervalSeconds 啟動 ping 任務
+     * @param pingIntervalSeconds
+     */
     public void setPingInterval(int pingIntervalSeconds) {
         if (pingIntervalSeconds < 1) {
             return;
@@ -701,6 +724,7 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
                 allLock.unlock();
 
                 int numCandidates = allServers.length;
+                // 对每个服务实例 ping 结果 的获取
                 results = pingerStrategy.pingServers(ping, allServers);
 
                 final List<Server> newUpList = new ArrayList<Server>();
@@ -710,21 +734,22 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
                     boolean isAlive = results[i];
                     Server svr = allServers[i];
                     boolean oldIsAlive = svr.isAlive();
-
+                    // 设置服务实例存活状态
                     svr.setAlive(isAlive);
-
+                    // 服务实例状态改变
                     if (oldIsAlive != isAlive) {
                         changedServers.add(svr);
                         logger.debug("LoadBalancer [{}]:  Server [{}] status changed to {}", 
                     		name, svr.getId(), (isAlive ? "ALIVE" : "DEAD"));
                     }
-
+                    // 服务实例状态未改变
                     if (isAlive) {
                         newUpList.add(svr);
                     }
                 }
                 upLock = upServerLock.writeLock();
                 upLock.lock();
+                // 设置在线的 服务实例 list
                 upServerList = newUpList;
                 upLock.unlock();
 
@@ -911,7 +936,12 @@ public class BaseLoadBalancer extends AbstractLoadBalancer implements
      * implementation is slow, or you have large number of servers.
      */
     private static class SerialPingStrategy implements IPingStrategy {
-
+        /**
+         * 获取ping 每个服务实例的结果
+         * @param ping
+         * @param servers
+         * @return
+         */
         @Override
         public boolean[] pingServers(IPing ping, Server[] servers) {
             int numCandidates = servers.length;

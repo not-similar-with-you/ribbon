@@ -53,6 +53,11 @@ public class NIWSDiscoveryPing extends AbstractLoadBalancerPing {
 			this.lb = lb;
 		}
 
+	/**
+	 * DiscoveryEnabledServer的InstanceInfo的InstanceStatus去判断，如果为InstanceStatus.UP，则为可用，否则不可用
+	 * @param server
+	 * @return
+	 */
 		public boolean isAlive(Server server) {
 		    boolean isAlive = true;
 		    if (server!=null && server instanceof DiscoveryEnabledServer){

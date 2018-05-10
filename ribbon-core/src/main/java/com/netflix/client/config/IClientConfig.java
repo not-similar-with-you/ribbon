@@ -24,7 +24,7 @@ import java.util.Map;
  * and for method execution. The default implementation is {@link DefaultClientConfigImpl}.
  * 
  * @author awang
- *
+ * 对客户端或者负载均衡的配置 默认实现类为DefaultClientConfigImpl
  */
 
 public interface IClientConfig {
