@@ -77,18 +77,19 @@ public class RetryRule extends AbstractLoadBalancerRule {
 	 */
 	public Server choose(ILoadBalancer lb, Object key) {
 		long requestTime = System.currentTimeMillis();
+		// 允许尝试的最大时间点
 		long deadline = requestTime + maxRetryMillis;
 
 		Server answer = null;
 
 		answer = subRule.choose(key);
-
+		// 获取的 负载 均衡策略 获取的 服务实例 为空 或 已经下线
 		if (((answer == null) || (!answer.isAlive()))
 				&& (System.currentTimeMillis() < deadline)) {
 
 			InterruptTask task = new InterruptTask(deadline
 					- System.currentTimeMillis());
-
+			// 线程 未 中断
 			while (!Thread.interrupted()) {
 				answer = subRule.choose(key);
 

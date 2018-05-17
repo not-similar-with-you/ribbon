@@ -69,7 +69,7 @@ public class RoundRobinRule extends AbstractLoadBalancerRule {
             }
             // incrementAndGetModulo方法内部使用nextServerCyclicCounter这个AtomicInteger属性原子递增对serverCount取模得到索引值
             int nextServerIndex = incrementAndGetModulo(serverCount);
-            // 得到服务器实例 ==》 RandomRule
+            // 得到服务器实例 ==》 RandomRule 不同 可能获取到 服务实例为 null 进行重新获取
             server = allServers.get(nextServerIndex);
 
             if (server == null) {
@@ -82,7 +82,7 @@ public class RoundRobinRule extends AbstractLoadBalancerRule {
                 return (server);
             }
 
-            // Next.
+            // Next. 继续循环
             server = null;
         }
 
