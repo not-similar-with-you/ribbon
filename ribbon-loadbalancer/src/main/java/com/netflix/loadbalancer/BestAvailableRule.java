@@ -40,7 +40,9 @@ public class BestAvailableRule extends ClientConfigEnabledRoundRobinRule {
     
     @Override
     public Server choose(Object key) {
+        // 统计对象 是否为 null
         if (loadBalancerStats == null) {
+            // 使用父类 轮训
             return super.choose(key);
         }
         // 获取所有的服务器列表

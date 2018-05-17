@@ -122,6 +122,7 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
     }
  
     /**
+     * 通过 predicate  过滤 获取 server list
      * Get servers filtered by this predicate from list of servers. 
      */
     public List<Server> getEligibleServers(List<Server> servers, Object loadBalancerKey) {
@@ -196,10 +197,12 @@ public abstract class AbstractServerPredicate implements Predicate<PredicateKey>
      * Choose a server in a round robin fashion after the predicate filters a given list of servers and load balancer key. 
      */
     public Optional<Server> chooseRoundRobinAfterFiltering(List<Server> servers, Object loadBalancerKey) {
+        // 获取合适的 服务 list
         List<Server> eligible = getEligibleServers(servers, loadBalancerKey);
         if (eligible.size() == 0) {
             return Optional.absent();
         }
+        //线性轮询的方式从备选清单中获取一个实例
         return Optional.of(eligible.get(incrementAndGetModulo(eligible.size())));
     }
         
