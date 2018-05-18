@@ -41,7 +41,9 @@ public class ZoneAvoidanceRule extends PredicateBasedRule {
     
     public ZoneAvoidanceRule() {
         super();
+        //主过滤条件
         ZoneAvoidancePredicate zonePredicate = new ZoneAvoidancePredicate(this);
+        // 组合过滤条件
         AvailabilityPredicate availabilityPredicate = new AvailabilityPredicate(this);
         compositePredicate = createCompositePredicate(zonePredicate, availabilityPredicate);
     }

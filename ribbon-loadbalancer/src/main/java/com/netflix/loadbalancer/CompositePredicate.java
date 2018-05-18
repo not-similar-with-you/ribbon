@@ -102,8 +102,11 @@ public class CompositePredicate extends AbstractServerPredicate {
      */
     @Override
     public List<Server> getEligibleServers(List<Server> servers, Object loadBalancerKey) {
+        // 主过滤条件对所有实例过滤并返回过滤后的实例清单
         List<Server> result = super.getEligibleServers(servers, loadBalancerKey);
         Iterator<AbstractServerPredicate> i = fallbacks.iterator();
+        // 次过滤条件 过滤
+        // 过滤后的实例总数 >= 最小过滤实例数 过滤后的实例比例 > 最小过滤百分比
         while (!(result.size() >= minimalFilteredServers && result.size() > (int) (servers.size() * minimalFilteredPercentage))
                 && i.hasNext()) {
             AbstractServerPredicate predicate = i.next();

@@ -72,9 +72,14 @@ public class AvailabilityPredicate extends  AbstractServerPredicate {
         }
         return !shouldSkipServer(stats.getSingleServerStat(input.getServer()));
     }
-    
-    
-    private boolean shouldSkipServer(ServerStats stats) {        
+
+    /**
+     * 是否忽略服务实例节点
+     * @param stats
+     * @return
+     */
+    private boolean shouldSkipServer(ServerStats stats) {
+        // 是否故障 实例的并发请求数大于阈值，默认值为$2^{31}$ - 1
         if ((CIRCUIT_BREAKER_FILTERING.get() && stats.isCircuitBreakerTripped()) 
                 || stats.getActiveRequestsCount() >= activeConnectionsLimit.get()) {
             return true;

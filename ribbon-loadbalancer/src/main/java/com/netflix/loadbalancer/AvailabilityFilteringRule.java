@@ -73,7 +73,7 @@ public class AvailabilityFilteringRule extends PredicateBasedRule {
     }
 
 
-    /**
+    /** 线性抽样的方式直接尝试寻找可用且较空闲的实例
      * This method is overridden to provide a more efficient implementation which does not iterate through
      * all servers. This is under the assumption that in most cases, there are more available instances 
      * than not. 
@@ -88,6 +88,7 @@ public class AvailabilityFilteringRule extends PredicateBasedRule {
             }
             server = roundRobinRule.choose(key);
         }
+        // 选取节点 次数 大于 >10
         return super.choose(key);
     }
 

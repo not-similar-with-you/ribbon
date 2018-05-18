@@ -94,6 +94,8 @@ public class WeightedResponseTimeRule extends RoundRobinRule {
     
     // holds the accumulated weight from index 0 to current index
     // for example, element at index 2 holds the sum of weight of servers from 0 to 2
+    //存储权重
+    /** 每个权重值所处的位置对应了负载均衡器维护的服务实例清单中所有实例在清单中的位置 */
     private volatile List<Double> accumulatedWeights = new ArrayList<Double>();
     
 
@@ -128,6 +130,7 @@ public class WeightedResponseTimeRule extends RoundRobinRule {
         }
         serverWeightTimer = new Timer("NFLoadBalancer-serverWeightTimer-"
                 + name, true);
+        //默认30秒执行一次
         serverWeightTimer.schedule(new DynamicServerWeightTask(), 0,
                 serverWeightTaskTimerInterval);
         // do a initial run
@@ -158,6 +161,7 @@ public class WeightedResponseTimeRule extends RoundRobinRule {
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NULL_VALUE")
     @Override
     public Server choose(ILoadBalancer lb, Object key) {
+        // 负载均衡器 非空校验
         if (lb == null) {
             return null;
         }
@@ -169,8 +173,9 @@ public class WeightedResponseTimeRule extends RoundRobinRule {
             if (Thread.interrupted()) {
                 return null;
             }
+            // 获取 所有 服务 实例
             List<Server> allList = lb.getAllServers();
-
+            // 服务 实例 总数
             int serverCount = allList.size();
 
             if (serverCount == 0) {
@@ -180,19 +185,23 @@ public class WeightedResponseTimeRule extends RoundRobinRule {
             int serverIndex = 0;
 
             // last one in the list is the sum of all weights
+            //  获取最后一个实例的权重
             double maxTotalWeight = currentWeights.size() == 0 ? 0 : currentWeights.get(currentWeights.size() - 1); 
             // No server has been hit yet and total weight is not initialized
             // fallback to use round robin
             if (maxTotalWeight < 0.001d || serverCount != currentWeights.size()) {
+                // 如果最后一个实例的权重值小于0.001，则采用父类实现的线性轮询的策略
                 server =  super.choose(getLoadBalancer(), key);
                 if(server == null) {
                     return server;
                 }
             } else {
                 // generate a random weight between 0 (inclusive) to maxTotalWeight (exclusive)
+                // 如果最后一个实例的权重值大于等于0.001，就产生一个[0, maxTotalWeight)的随机数
                 double randomWeight = random.nextDouble() * maxTotalWeight;
                 // pick the server index based on the randomIndex
                 int n = 0;
+                // 遍历维护的权重清单，若权重大于等于随机得到的数值，就选择这个实例
                 for (Double d : currentWeights) {
                     if (d >= randomWeight) {
                         serverIndex = n;
@@ -233,7 +242,7 @@ public class WeightedResponseTimeRule extends RoundRobinRule {
     }
 
     class ServerWeight {
-
+        /** 维护实例权重 */
         public void maintainWeights() {
             ILoadBalancer lb = getLoadBalancer();
             if (lb == null) {
@@ -252,6 +261,7 @@ public class WeightedResponseTimeRule extends RoundRobinRule {
                     // no statistics, nothing to do
                     return;
                 }
+                //// 计算所有实例的平均响应时间的总和：totalResponseTime
                 double totalResponseTime = 0;
                 // find maximal 95% response time
                 for (Server server : nlb.getAllServers()) {
@@ -259,6 +269,7 @@ public class WeightedResponseTimeRule extends RoundRobinRule {
                     ServerStats ss = stats.getSingleServerStat(server);
                     totalResponseTime += ss.getResponseTimeAvg();
                 }
+                //// 逐个计算每个实例的权重：weightSoFar + totalResponseTime - 实例的平均响应时间
                 // weight for each server is (sum of responseTime of all servers - responseTime)
                 // so that the longer the response time, the less the weight and the less likely to be chosen
                 Double weightSoFar = 0.0;
@@ -271,6 +282,7 @@ public class WeightedResponseTimeRule extends RoundRobinRule {
                     weightSoFar += weight;
                     finalWeights.add(weightSoFar);   
                 }
+                //实例的平均响应时间越短、权重区间的宽度越大
                 setWeights(finalWeights);
             } catch (Exception e) {
                 logger.error("Error calculating server weights", e);
